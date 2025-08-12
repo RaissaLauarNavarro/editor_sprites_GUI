@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import os
+import threading
 from typing import Optional
 
 # Importa as classes e funções dos outros arquivos
@@ -7,24 +8,24 @@ from gui_builder import GUIBuilder
 from image_processor import process_and_save_blocks
 from utils import update_log, open_output_folder, select_image_path, select_output_folder
 
-# --- Classe principal da Aplicação com a identidade Gemini ---
-class GeminiApp(ctk.CTk):
+# --- Classe principal da Aplicação ---
+class App(ctk.CTk):
     """
-    Aplicativo principal Gemini Art Cutter.
+    Aplicativo principal "Divisor de Imagem em Blocos".
     Gerencia a janela, o estado e a interação entre a GUI e a lógica de processamento.
     """
     def __init__(self) -> None:
         super().__init__()
 
-        # --- Paleta de Cores Gemini (MANTIDA AQUI) ---
+        # --- Paleta de Cores Personalizada ---
         self.COLOR_BACKGROUND: str = "#1e1e1e"
         self.COLOR_FRAME: str = "#2d2d30"
         self.COLOR_TEXT: str = "#E3E3E3"
-        self.COLOR_PRIMARY_BUTTON: str = "#4a80f5"
-        self.COLOR_PRIMARY_HOVER: str = "#3a70e5"
+        self.COLOR_PRIMARY_BUTTON: str = "#e74af5"
+        self.COLOR_PRIMARY_HOVER: str = "#7c0b80"
         self.COLOR_SECONDARY_BUTTON: str = "#404040"
         self.COLOR_SECONDARY_HOVER: str = "#505050"
-        self.COLOR_GRID: str = "#ff4d4d"
+        self.COLOR_GRID: str = "#4dff4d"
 
         # --- Variáveis de estado ---
         self.imagem_path: str = ""
@@ -52,11 +53,11 @@ class GeminiApp(ctk.CTk):
         GUIBuilder.build(self)
         self.bloco_px_var.trace_add("write", self._agendar_atualizacao_preview)
         
-        update_log(self.log_textbox, "Bem-vindo ao Gemini Art Cutter!")
+        update_log(self.log_textbox, "Bem-vindo ao Divisor de Imagem em Blocos!")
 
     def _setup_window(self) -> None:
         """Configura as propriedades da janela principal."""
-        self.title("Gemini Art Cutter")
+        self.title("Divisor de Imagem em Blocos")
         self.geometry("850x650")
         self.minsize(800, 600)
         self._set_appearance_mode("dark")
@@ -161,42 +162,47 @@ class GeminiApp(ctk.CTk):
             update_log(self.log_textbox, "Erro: Tamanho do bloco ou fator de escala inválido.")
             return
         
-        self._iniciar_processamento(bloco_px, escala)
+        self._iniciar_processamento_com_thread(bloco_px, escala)
 
-    def _iniciar_processamento(self, bloco_px: int, escala: int) -> None:
-        """Configura e executa o processamento da imagem."""
+    def _iniciar_processamento_com_thread(self, bloco_px: int, escala: int) -> None:
+        """Configura e executa o processamento da imagem em uma thread separada."""
         self.btn_executar.configure(state="disabled")
         self.progressbar.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10,0))
-        self.progressbar.start()
-        self.update_idletasks()
+        self.progressbar.set(0)
+        update_log(self.log_textbox, "Iniciando processamento...")
 
+        processing_thread = threading.Thread(
+            target=self._processar_em_thread,
+            args=(self.imagem_path, self.pasta_saida, bloco_px, escala)
+        )
+        processing_thread.start()
+
+    def _processar_em_thread(self, image_path: str, output_folder: str, bloco_px: int, escala: int) -> None:
+        """Função que será executada na thread de processamento."""
         try:
             process_and_save_blocks(
-                self.imagem_path, 
-                self.pasta_saida, 
-                bloco_px, 
-                escala, 
-                lambda progress: self._update_progress(progress)
+                image_path,
+                output_folder,
+                bloco_px,
+                escala,
+                lambda progress: self.after(0, self._update_progress, progress)
             )
-            update_log(self.log_textbox, "✨ Processamento concluído!")
+            self.after(0, update_log, self.log_textbox, "✨ Processamento concluído!")
         except Exception as e:
-            update_log(self.log_textbox, f"ERRO: {e}")
+            self.after(0, update_log, self.log_textbox, f"ERRO: {e}")
         finally:
-            self._finalizar_processamento()
-
+            self.after(500, self._finalizar_processamento)
+    
     def _update_progress(self, progress: float) -> None:
-        """Atualiza a barra de progresso na GUI."""
+        """Atualiza a barra de progresso na GUI (chamado da thread principal)."""
         self.progressbar.set(progress)
-        self.update_idletasks()
-
+    
     def _finalizar_processamento(self) -> None:
         """Reseta a interface após o processamento."""
-        self.progressbar.stop()
         self.progressbar.grid_remove()
         self.btn_executar.configure(state="normal")
 
 
 if __name__ == "__main__":
-    app = GeminiApp()
+    app = App()
     app.mainloop()
-

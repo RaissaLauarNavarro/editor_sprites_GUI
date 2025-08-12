@@ -8,7 +8,7 @@ class GUIBuilder:
     """
     @staticmethod
     def build(app):
-        """Constrói a interface para a aplicação GeminiApp."""
+        """Constrói a interface para a aplicação """
         GUIBuilder._create_control_panel_widgets(app)
         GUIBuilder._create_main_panel_widgets(app)
 
@@ -18,13 +18,8 @@ class GUIBuilder:
         app.frame_controles = ctk.CTkFrame(app, fg_color=app.COLOR_FRAME, width=280)
         app.frame_controles.grid(row=0, column=0, padx=(20, 10), pady=20, sticky="nsew")
 
-        try:
-            gemini_icon_image = Image.open("gemini_icon.png")
-            app.gemini_icon = ctk.CTkImage(light_image=gemini_icon_image, size=(24, 24))
-            label_titulo = ctk.CTkLabel(app.frame_controles, text=" Gemini Art Cutter", image=app.gemini_icon, compound="left", font=ctk.CTkFont(size=20, weight="bold"))
-        except Exception:
-            app.gemini_icon = None
-            label_titulo = ctk.CTkLabel(app.frame_controles, text="Gemini Art Cutter", font=ctk.CTkFont(size=20, weight="bold"))
+        app.icon = None
+        label_titulo = ctk.CTkLabel(app.frame_controles, text="Divisor de Imagem em Blocos", font=ctk.CTkFont(size=20, weight="bold"))
         label_titulo.pack(pady=(20, 20), padx=20)
 
         ctk.CTkButton(app.frame_controles, text="Escolher Imagem", height=35, command=app._handle_escolher_imagem, fg_color=app.COLOR_SECONDARY_BUTTON, hover_color=app.COLOR_SECONDARY_HOVER).pack(pady=10, padx=20, fill="x")
@@ -34,12 +29,20 @@ class GUIBuilder:
         frame_opcoes.pack(pady=20, padx=20, fill="x")
         frame_opcoes.grid_columnconfigure((0, 1), weight=1)
 
+        # Label para Tamanho do Bloco
+        label_bloco = ctk.CTkLabel(frame_opcoes, text="Tamanho do bloco (px):")
+        label_bloco.grid(row=0, column=0, padx=(0, 5), pady=(0, 0), sticky="w")
+
+        # Label para Fator de Escala
+        label_escala = ctk.CTkLabel(frame_opcoes, text="Fator de escala:")
+        label_escala.grid(row=0, column=1, padx=(5, 0), pady=(0, 0), sticky="w")
+
         app.tamanho_bloco_entry = ctk.CTkEntry(frame_opcoes, textvariable=app.bloco_px_var)
-        app.tamanho_bloco_entry.grid(row=0, column=0, padx=(0, 5), pady=10, sticky="ew")
+        app.tamanho_bloco_entry.grid(row=1, column=0, padx=(0, 5), pady=10, sticky="ew")
 
         app.fator_escala_combo = ctk.CTkComboBox(frame_opcoes, values=["1", "2", "4", "8", "16", "32"], button_color=app.COLOR_PRIMARY_BUTTON)
         app.fator_escala_combo.set("4")
-        app.fator_escala_combo.grid(row=0, column=1, padx=(5, 0), pady=10, sticky="ew")
+        app.fator_escala_combo.grid(row=1, column=1, padx=(5, 0), pady=10, sticky="ew")
 
         ctk.CTkButton(app.frame_controles, text="Abrir Pasta de Saída", command=app._handle_abrir_pasta_saida, fg_color="transparent", border_width=1, border_color=app.COLOR_SECONDARY_HOVER).pack(side="bottom", pady=20, padx=20, fill="x")
 
@@ -65,8 +68,6 @@ class GUIBuilder:
 
         app.log_textbox = ctk.CTkTextbox(app.tabview.tab("Log de Atividades"), text_color=app.COLOR_TEXT, fg_color="transparent", activate_scrollbars=True)
         app.log_textbox.pack(expand=True, fill="both", padx=10, pady=10)
-        app.log_textbox.insert("0.0", f"● Bem-vindo ao Gemini Art Cutter!\n\n")
 
         app.progressbar = ctk.CTkProgressBar(app.frame_principal, fg_color=app.COLOR_FRAME, progress_color=app.COLOR_PRIMARY_BUTTON)
         app.progressbar.set(0)
-

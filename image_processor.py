@@ -19,7 +19,7 @@ def process_and_save_blocks(
         escala: O fator de escala para redimensionar os blocos.
         progress_callback: Uma função para notificar o progresso (de 0 a 1).
     """
-    # Lógica de processamento e salvamento
+    
     imagem = Image.open(image_path).convert("RGBA")
     largura, altura = imagem.size
     
@@ -33,7 +33,7 @@ def process_and_save_blocks(
     for i, y in enumerate(range(0, altura, bloco_px)):
         for x in range(0, largura, bloco_px):
             bloco = imagem.crop((x, y, x + bloco_px, y + bloco_px))
-            if bloco.getbbox():  # Salva apenas blocos com pixels não transparentes
+            if bloco.getbbox():  
                 if escala > 1:
                     bloco = bloco.resize((bloco_px * escala, bloco_px * escala), Image.Resampling.NEAREST)
                 nome_arquivo = f"{nome_base}_{contador:04}.png"
@@ -42,4 +42,3 @@ def process_and_save_blocks(
         
         progress = (i + 1) / total_rows
         progress_callback(progress)
-
