@@ -29,11 +29,9 @@ class GUIBuilder:
         frame_opcoes.pack(pady=20, padx=20, fill="x")
         frame_opcoes.grid_columnconfigure((0, 1), weight=1)
 
-        # Label para Tamanho do Bloco
         label_bloco = ctk.CTkLabel(frame_opcoes, text="Tamanho do bloco (px):")
         label_bloco.grid(row=0, column=0, padx=(0, 5), pady=(0, 0), sticky="w")
 
-        # Label para Fator de Escala
         label_escala = ctk.CTkLabel(frame_opcoes, text="Fator de escala:")
         label_escala.grid(row=0, column=1, padx=(5, 0), pady=(0, 0), sticky="w")
 
@@ -69,5 +67,7 @@ class GUIBuilder:
         app.log_textbox = ctk.CTkTextbox(app.tabview.tab("Log de Atividades"), text_color=app.COLOR_TEXT, fg_color="transparent", activate_scrollbars=True)
         app.log_textbox.pack(expand=True, fill="both", padx=10, pady=10)
 
+        app.status_label = ctk.CTkLabel(app.frame_principal, text="", text_color=app.COLOR_SUCCESS)
+        app.status_label.grid(row=2, column=0, columnspan=1, padx=5, pady=(10, 0), sticky="sw")
         app.progressbar = ctk.CTkProgressBar(app.frame_principal, fg_color=app.COLOR_FRAME, progress_color=app.COLOR_PRIMARY_BUTTON)
         app.progressbar.set(0)

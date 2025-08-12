@@ -26,6 +26,7 @@ class App(ctk.CTk):
         self.COLOR_SECONDARY_BUTTON: str = "#404040"
         self.COLOR_SECONDARY_HOVER: str = "#505050"
         self.COLOR_GRID: str = "#4dff4d"
+        self.COLOR_SUCCESS: str = "#4dff4d"
 
         # --- Variáveis de estado ---
         self.imagem_path: str = ""
@@ -41,6 +42,7 @@ class App(ctk.CTk):
         self.preview_label = None
         self.log_textbox = None
         self.tabview = None
+        self.status_label = None
         
         # --- Configuração da Janela Principal ---
         self._setup_window()
@@ -170,6 +172,8 @@ class App(ctk.CTk):
         self.progressbar.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10,0))
         self.progressbar.set(0)
         update_log(self.log_textbox, "Iniciando processamento...")
+        if self.status_label:
+            self.status_label.configure(text="")
 
         processing_thread = threading.Thread(
             target=self._processar_em_thread,
@@ -187,15 +191,22 @@ class App(ctk.CTk):
                 escala,
                 lambda progress: self.after(0, self._update_progress, progress)
             )
-            self.after(0, update_log, self.log_textbox, "✨ Processamento concluído!")
+            self.after(0, self._display_success_message)
         except Exception as e:
             self.after(0, update_log, self.log_textbox, f"ERRO: {e}")
-        finally:
-            self.after(500, self._finalizar_processamento)
+            self.after(0, self._finalizar_processamento)
     
     def _update_progress(self, progress: float) -> None:
         """Atualiza a barra de progresso na GUI (chamado da thread principal)."""
         self.progressbar.set(progress)
+
+    def _display_success_message(self) -> None:
+        """Exibe a mensagem de sucesso e a remove após um tempo."""
+        update_log(self.log_textbox, "✨ Processamento concluído!")
+        self.status_label.configure(text="✨ Processamento concluído!", text_color=self.COLOR_SUCCESS)
+        self.after(3000, lambda: self.status_label.configure(text=""))
+        
+        self.after(0, self._finalizar_processamento)
     
     def _finalizar_processamento(self) -> None:
         """Reseta a interface após o processamento."""
