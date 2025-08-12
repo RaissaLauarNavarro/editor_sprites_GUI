@@ -27,6 +27,7 @@ class App(ctk.CTk):
         self.COLOR_SECONDARY_HOVER: str = "#505050"
         self.COLOR_GRID: str = "#4dff4d"
         self.COLOR_SUCCESS: str = "#4dff4d"
+        self.COLOR_ERROR: str = "#ed8484"
 
         # --- Variáveis de estado ---
         self.imagem_path: str = ""
@@ -57,6 +58,7 @@ class App(ctk.CTk):
         
         update_log(self.log_textbox, "Bem-vindo ao Divisor de Imagem em Blocos!")
 
+
     def _setup_window(self) -> None:
         """Configura as propriedades da janela principal."""
         self.title("Divisor de Imagem em Blocos")
@@ -78,6 +80,7 @@ class App(ctk.CTk):
         except Exception:
             pass
 
+
     def _handle_escolher_imagem(self) -> None:
         """Abre a caixa de diálogo para selecionar uma imagem e atualiza o estado."""
         path = select_image_path()
@@ -87,6 +90,7 @@ class App(ctk.CTk):
             self._agendar_atualizacao_preview()
             self.tabview.set("Preview com Grid")
 
+
     def _handle_escolher_pasta(self) -> None:
         """Abre a caixa de diálogo para selecionar a pasta de saída e atualiza o estado."""
         pasta = select_output_folder()
@@ -94,9 +98,11 @@ class App(ctk.CTk):
             self.pasta_saida = pasta
             update_log(self.log_textbox, "Pasta de saída definida.")
 
+
     def _handle_abrir_pasta_saida(self) -> None:
         """Tenta abrir a pasta de saída no explorador de arquivos do sistema."""
         open_output_folder(self.pasta_saida, self.log_textbox)
+
 
     def _agendar_atualizacao_preview(self, *args) -> None:
         """Agenda a atualização do preview para evitar múltiplas chamadas rápidas."""
@@ -111,6 +117,7 @@ class App(ctk.CTk):
         except Exception:
             self._after_id = None
 
+
     def _atualizar_preview(self) -> None:
         """Gera e exibe a imagem de preview com o grid."""
         self._after_id = None
@@ -122,6 +129,7 @@ class App(ctk.CTk):
             bloco_px = int(self.bloco_px_var.get())
             if bloco_px <= 0:
                 self._safe_configure_preview(text="Digite um tamanho de bloco válido.")
+                self.status_label.configure(text="Digite um tamanho de bloco válido.", text_color=self.COLOR_ERROR)
                 return
 
             original_image = Image.open(self.imagem_path).convert("RGBA")
@@ -149,22 +157,27 @@ class App(ctk.CTk):
         except Exception as e:
             self._safe_configure_preview(text=f"Erro no preview:\n{e}")
 
+
     def _handle_dividir_imagem(self) -> None:
         """Inicia o processo de divisão da imagem."""
         if not self.imagem_path or not self.pasta_saida:
-            update_log(self.log_textbox, "Erro: Selecione a imagem e a pasta de saída.")
+            update_log(self.log_textbox, "Erro: Selecione a imagem e a pasta de saída")
+            self.status_label.configure(text="Erro: Selecione a imagem e a pasta de saída", text_color=self.COLOR_ERROR)
             return
 
         try:
             bloco_px = int(self.bloco_px_var.get())
             escala = int(self.fator_escala_combo.get())
             if bloco_px <= 0 or escala <= 0:
+                self.status_label.configure(text="Tamanho do bloco e escala devem ser maiores que zero", text_color=self.COLOR_ERROR)
                 raise ValueError("Tamanho do bloco e escala devem ser maiores que zero.")
         except (ValueError, TypeError):
             update_log(self.log_textbox, "Erro: Tamanho do bloco ou fator de escala inválido.")
+            self.status_label.configure(text="Erro: Tamanho do bloco ou fator de escala inválido", text_color=self.COLOR_ERROR)
             return
         
         self._iniciar_processamento_com_thread(bloco_px, escala)
+
 
     def _iniciar_processamento_com_thread(self, bloco_px: int, escala: int) -> None:
         """Configura e executa o processamento da imagem em uma thread separada."""
@@ -172,6 +185,7 @@ class App(ctk.CTk):
         self.progressbar.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10,0))
         self.progressbar.set(0)
         update_log(self.log_textbox, "Iniciando processamento...")
+        self.status_label.configure(text="Iniciando processamento...", text_color=self.COLOR_SUCCESS)
         if self.status_label:
             self.status_label.configure(text="")
 
@@ -180,6 +194,7 @@ class App(ctk.CTk):
             args=(self.imagem_path, self.pasta_saida, bloco_px, escala)
         )
         processing_thread.start()
+
 
     def _processar_em_thread(self, image_path: str, output_folder: str, bloco_px: int, escala: int) -> None:
         """Função que será executada na thread de processamento."""
@@ -196,9 +211,11 @@ class App(ctk.CTk):
             self.after(0, update_log, self.log_textbox, f"ERRO: {e}")
             self.after(0, self._finalizar_processamento)
     
+
     def _update_progress(self, progress: float) -> None:
         """Atualiza a barra de progresso na GUI (chamado da thread principal)."""
         self.progressbar.set(progress)
+
 
     def _display_success_message(self) -> None:
         """Exibe a mensagem de sucesso e a remove após um tempo."""
@@ -208,6 +225,7 @@ class App(ctk.CTk):
         
         self.after(0, self._finalizar_processamento)
     
+
     def _finalizar_processamento(self) -> None:
         """Reseta a interface após o processamento."""
         self.progressbar.grid_remove()
