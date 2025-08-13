@@ -1,4 +1,4 @@
-# 📦Divisor de Imagem em Blocos (com filtro de conteúdo e múltiplos arquivos)
+# 📦Editor de Sprites com Interface (com filtro de conteúdo e múltiplos arquivos)
 
 Este script em Python percorre **todas as imagens PNG** dentro de uma pasta, divide cada imagem em blocos de tamanho definido (por padrão 16x16 pixels) e salva **apenas os blocos que possuem conteúdo visível** (não totalmente brancos ou transparentes).
 
