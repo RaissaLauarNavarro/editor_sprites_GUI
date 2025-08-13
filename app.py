@@ -11,7 +11,7 @@ from utils import update_log, open_output_folder, select_image_path, select_outp
 # --- Classe principal da Aplicação ---
 class App(ctk.CTk):
     """
-    Aplicativo principal "Divisor de Imagem em Blocos".
+    Aplicativo principal "Editor de Sprites".
     Gerencia a janela, o estado e a interação entre a GUI e a lógica de processamento.
     """
     def __init__(self) -> None:
@@ -56,12 +56,12 @@ class App(ctk.CTk):
         GUIBuilder.build(self)
         self.bloco_px_var.trace_add("write", self._agendar_atualizacao_preview)
         
-        update_log(self.log_textbox, "Bem-vindo ao Divisor de Imagem em Blocos!")
+        update_log(self.log_textbox, "Bem-vindo ao Editor de Sprites!")
 
 
     def _setup_window(self) -> None:
         """Configura as propriedades da janela principal."""
-        self.title("Divisor de Imagem em Blocos")
+        self.title("Editor de Sprites")
         self.geometry("850x650")
         self.minsize(800, 600)
         self._set_appearance_mode("dark")

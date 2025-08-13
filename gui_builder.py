@@ -19,7 +19,7 @@ class GUIBuilder:
         app.frame_controles.grid(row=0, column=0, padx=(20, 10), pady=20, sticky="nsew")
 
         app.icon = None
-        label_titulo = ctk.CTkLabel(app.frame_controles, text="Divisor de Imagem em Blocos", font=ctk.CTkFont(size=20, weight="bold"))
+        label_titulo = ctk.CTkLabel(app.frame_controles, text="Editor de Sprites", font=ctk.CTkFont(size=20, weight="bold"))
         label_titulo.pack(pady=(20, 20), padx=20)
 
         ctk.CTkButton(app.frame_controles, text="Escolher Imagem", height=35, command=app._handle_escolher_imagem, fg_color=app.COLOR_SECONDARY_BUTTON, hover_color=app.COLOR_SECONDARY_HOVER).pack(pady=10, padx=20, fill="x")
