@@ -1,5 +1,4 @@
 import customtkinter as ctk
-from PIL import Image
 
 class GUIBuilder:
     """
@@ -7,67 +6,175 @@ class GUIBuilder:
     Cria todos os widgets e os posiciona na janela principal.
     """
     @staticmethod
-    def build(app):
-        """Constrói a interface para a aplicação """
-        GUIBuilder._create_control_panel_widgets(app)
-        GUIBuilder._create_main_panel_widgets(app)
+    def build(app, controller):
+        """Constrói a interface para a aplicação."""
+        GUIBuilder._create_control_panel_widgets(app, controller)
+        GUIBuilder._create_tab_view_widgets(app, controller)
+
 
     @staticmethod
-    def _create_control_panel_widgets(app):
-        """Cria os widgets do painel de controle esquerdo."""
-        app.frame_controles = ctk.CTkFrame(app, fg_color=app.COLOR_FRAME, width=280)
-        app.frame_controles.grid(row=0, column=0, padx=(20, 10), pady=20, sticky="nsew")
+    def _create_control_panel_widgets(app, controller):
+        app.frame_controles = ctk.CTkFrame(app, fg_color=controller.COLOR_FRAME, width=290)
+        app.frame_controles.grid(row=0, column=0, padx=(20, 10), pady=20, sticky="ns")
+        app.frame_controles.grid_propagate(False)
+        app.frame_controles.grid_columnconfigure(0, weight=1)
+        app.frame_controles.grid_rowconfigure(5, weight=1)
 
-        app.icon = None
-        label_titulo = ctk.CTkLabel(app.frame_controles, text="Editor de Sprites", font=ctk.CTkFont(size=20, weight="bold"))
-        label_titulo.pack(pady=(20, 20), padx=20)
+        label_title = ctk.CTkLabel(app.frame_controles, text="Editor de Sprites", font=ctk.CTkFont(size=20, weight="bold"))
+        label_title.grid(row=0, column=0, padx=20, pady=(20, 20), sticky="ew")
 
-        ctk.CTkButton(app.frame_controles, text="Escolher Imagem", height=35, command=app._handle_escolher_imagem, fg_color=app.COLOR_SECONDARY_BUTTON, hover_color=app.COLOR_SECONDARY_HOVER).pack(pady=10, padx=20, fill="x")
-        ctk.CTkButton(app.frame_controles, text="Escolher Pasta de Saída", height=35, command=app._handle_escolher_pasta, fg_color=app.COLOR_SECONDARY_BUTTON, hover_color=app.COLOR_SECONDARY_HOVER).pack(pady=10, padx=20, fill="x")
+        btn_img = ctk.CTkButton(app.frame_controles, text="Escolher Imagem", height=35, command=controller.handle_choose_image, fg_color=controller.COLOR_SECONDARY_BUTTON, hover_color=controller.COLOR_SECONDARY_HOVER)
+        btn_img.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
 
-        frame_opcoes = ctk.CTkFrame(app.frame_controles, fg_color="transparent")
-        frame_opcoes.pack(pady=20, padx=20, fill="x")
-        frame_opcoes.grid_columnconfigure((0, 1), weight=1)
+        btn_folder = ctk.CTkButton(app.frame_controles, text="Escolher Pasta de Saída", height=35, command=controller.handle_choose_folder, fg_color=controller.COLOR_SECONDARY_BUTTON, hover_color=controller.COLOR_SECONDARY_HOVER)
+        btn_folder.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
-        label_bloco = ctk.CTkLabel(frame_opcoes, text="Tamanho do bloco (px):")
-        label_bloco.grid(row=0, column=0, padx=(0, 5), pady=(0, 0), sticky="w")
+        controller.log_label = ctk.CTkLabel(app.frame_controles, text="", text_color="white", anchor="w")
+        controller.log_label.grid(row=6, column=0, padx=20, pady=(50, 0), sticky="ew")
 
-        label_escala = ctk.CTkLabel(frame_opcoes, text="Fator de escala:")
-        label_escala.grid(row=0, column=1, padx=(5, 0), pady=(0, 0), sticky="w")
+        btn_open = ctk.CTkButton(app.frame_controles, text="Abrir Pasta de Saída", command=controller.handle_open_folder_exit, fg_color="transparent", border_width=1, border_color=controller.COLOR_SECONDARY_HOVER)
+        btn_open.grid(row=7, column=0, padx=20, pady=(10, 20), sticky="ew")
 
-        app.tamanho_bloco_entry = ctk.CTkEntry(frame_opcoes, textvariable=app.bloco_px_var)
-        app.tamanho_bloco_entry.grid(row=1, column=0, padx=(0, 5), pady=10, sticky="ew")
-
-        app.fator_escala_combo = ctk.CTkComboBox(frame_opcoes, values=["1", "2", "4", "8", "16", "32"], button_color=app.COLOR_PRIMARY_BUTTON)
-        app.fator_escala_combo.set("4")
-        app.fator_escala_combo.grid(row=1, column=1, padx=(5, 0), pady=10, sticky="ew")
-
-        ctk.CTkButton(app.frame_controles, text="Abrir Pasta de Saída", command=app._handle_abrir_pasta_saida, fg_color="transparent", border_width=1, border_color=app.COLOR_SECONDARY_HOVER).pack(side="bottom", pady=20, padx=20, fill="x")
 
     @staticmethod
-    def _create_main_panel_widgets(app):
-        """Cria os widgets do painel principal direito."""
-        app.frame_principal = ctk.CTkFrame(app, fg_color="transparent")
-        app.frame_principal.grid(row=0, column=1, padx=(10, 20), pady=20, sticky="nsew")
-        app.frame_principal.grid_rowconfigure(1, weight=1)
-        app.frame_principal.grid_columnconfigure(0, weight=1)
+    def _create_tab_view_widgets(app, controller):
+        """Cria as abas e os widgets específicos para cada funcionalidade."""
+        app.main_frame = ctk.CTkFrame(app, fg_color="transparent")
+        app.main_frame.grid(row=0, column=1, padx=(10, 20), pady=20, sticky="nsew")
+        app.main_frame.grid_columnconfigure(0, weight=1)
+        app.main_frame.grid_rowconfigure(0, weight=1)
 
-        app.btn_executar = ctk.CTkButton(app.frame_principal, text="✨ Processar Imagens", height=50, font=ctk.CTkFont(size=16, weight="bold"), command=app._handle_dividir_imagem, fg_color=app.COLOR_PRIMARY_BUTTON, hover_color=app.COLOR_PRIMARY_HOVER)
-        app.btn_executar.grid(row=0, column=0, columnspan=2, padx=0, pady=(0, 20), sticky="ew")
+        # Cria a tabview antes de adicionar as abas
+        controller.tabview = ctk.CTkTabview(app.main_frame, fg_color=controller.COLOR_FRAME, segmented_button_selected_color=controller.COLOR_PRIMARY_BUTTON, segmented_button_selected_hover_color=controller.COLOR_PRIMARY_HOVER)
+        controller.tabview.grid(row=0, column=0, sticky="nsew")
         
-        app.tabview = ctk.CTkTabview(app.frame_principal, fg_color=app.COLOR_FRAME, segmented_button_selected_color=app.COLOR_PRIMARY_BUTTON, segmented_button_selected_hover_color=app.COLOR_PRIMARY_HOVER)
-        app.tabview.grid(row=1, column=0, columnspan=2, sticky="nsew")
-        app.tabview.add("Preview com Grid")
-        app.tabview.add("Log de Atividades")
-        app.tabview.set("Preview com Grid")
+        # Adiciona e configura cada aba
+        tab_log = controller.tabview.add("Log de Atividades")
+        tab_split = controller.tabview.add("Divisor de Sprites")
+        tab_palette = controller.tabview.add("Gerador de Paleta de Cores")
+        tab_convert = controller.tabview.add("Conversor de Formato")
+        
+        GUIBuilder._create_log_tab_widgets(tab_log, controller)
 
-        app.preview_label = ctk.CTkLabel(app.tabview.tab("Preview com Grid"), text="Selecione uma imagem para ver o preview.", text_color=app.COLOR_TEXT)
-        app.preview_label.pack(expand=True, fill="both", padx=20, pady=20)
+        GUIBuilder._create_split_tab_widgets(tab_split, controller)
 
-        app.log_textbox = ctk.CTkTextbox(app.tabview.tab("Log de Atividades"), text_color=app.COLOR_TEXT, fg_color="transparent", activate_scrollbars=True)
-        app.log_textbox.pack(expand=True, fill="both", padx=10, pady=10)
+        GUIBuilder._create_palette_tab_widgets(tab_palette, controller)
 
-        app.status_label = ctk.CTkLabel(app.frame_principal, text="", text_color=app.COLOR_SUCCESS)
-        app.status_label.grid(row=2, column=0, columnspan=1, padx=5, pady=(10, 0), sticky="sw")
-        app.progressbar = ctk.CTkProgressBar(app.frame_principal, fg_color=app.COLOR_FRAME, progress_color=app.COLOR_PRIMARY_BUTTON)
-        app.progressbar.set(0)
+        GUIBuilder._create_convert_tab_widgets(tab_convert, controller)
+
+        # Cria a barra de status e progresso na parte inferior do main_frame
+        controller.progressbar = ctk.CTkProgressBar(app.main_frame, fg_color=controller.COLOR_FRAME, progress_color=controller.COLOR_PRIMARY_BUTTON)
+        controller.progressbar.set(0)
+        controller.progressbar.grid(row=1, column=0, sticky="ew", pady=(10, 0), padx=5)
+        
+        controller.status_label = ctk.CTkLabel(app.main_frame, text="", text_color=controller.COLOR_SUCCESS)
+        controller.status_label.grid(row=2, column=0, sticky="sw", padx=5)
+        
+        # Oculta a barra de progresso e a label de status inicialmente
+        controller.progressbar.grid_remove()
+        controller.status_label.grid_remove()
+
+
+    @staticmethod
+    def _create_log_tab_widgets(tab, controller):
+        """Cria e posiciona os widgets dentro da aba Log de Atividades."""
+        controller.log_textbox = ctk.CTkTextbox(tab, text_color=controller.COLOR_TEXT, fg_color="transparent", activate_scrollbars=True)
+        controller.log_textbox.pack(padx=0, pady=0, expand=True, fill="both")
+
+
+    @staticmethod
+    def _create_split_tab_widgets(tab, controller):
+        """Cria e posiciona os widgets dentro da aba Divisor de Sprites."""
+        
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(0, weight=1)
+        
+        # Frame de preview com grid
+        preview_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        preview_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 5))
+        preview_frame.grid_columnconfigure(0, weight=1)
+        preview_frame.grid_rowconfigure(0, weight=1)
+        
+        controller.preview_label_split = ctk.CTkLabel(preview_frame, text="Selecione uma imagem para ver o preview", text_color=controller.COLOR_TEXT)
+        controller.preview_label_split.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+        
+        # Frame para os controles da aba
+        controls_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        controls_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 10))
+        controls_frame.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkLabel(controls_frame, text="Tamanho do bloco (px):").grid(row=0, column=0, padx=(0, 5), pady=(0, 0), sticky="w")
+        ctk.CTkLabel(controls_frame, text="Fator de escala:").grid(row=0, column=1, padx=(5, 0), pady=(0, 0), sticky="w")
+
+        ctk.CTkEntry(controls_frame, textvariable=controller.bloco_px_var).grid(row=1, column=0, padx=(0, 5), pady=10, sticky="ew")
+
+        scale_factor_widget = ctk.CTkComboBox(controls_frame, values=["1", "2", "4", "8", "16", "32"], button_color=controller.COLOR_PRIMARY_BUTTON)
+        scale_factor_widget.set(controller.scale_factor_var.get())
+        scale_factor_widget.grid(row=1, column=1, padx=(5, 0), pady=10, sticky="ew")
+        controller.scale_factor_var = scale_factor_widget
+
+        ctk.CTkLabel(controls_frame, text="Nome do arquivo de saída:").grid(row=2, column=0, columnspan=2, padx=(0, 0), pady=(0, 0), sticky="w")
+        output_name_entry = ctk.CTkEntry(controls_frame)
+        output_name_entry.grid(row=3, column=0, columnspan=2, padx=(0, 0), pady=10, sticky="ew")
+        output_name_entry.insert(0, "sprite")  # Valor padrão
+        controller.output_name_processor = output_name_entry
+
+        controller.btn_execute = ctk.CTkButton(controls_frame, text="✨ Dividir Imagem", height=40, font=ctk.CTkFont(size=16, weight="bold"), command=controller.handle_split_image, fg_color=controller.COLOR_PRIMARY_BUTTON, hover_color=controller.COLOR_PRIMARY_HOVER) 
+        controller.btn_execute.grid(row=4, column=0, columnspan=2, padx=0, pady=10, sticky="ew")
+
+
+
+    @staticmethod
+    def _create_palette_tab_widgets(tab, controller):
+        """Cria e posiciona os widgets dentro da aba Gerador de Paleta."""
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(0, weight=1) 
+        tab.grid_rowconfigure(1, weight=1) 
+        
+        controller.palette_preview_label = ctk.CTkLabel(tab, text="Selecione uma imagem para ver o preview", text_color=controller.COLOR_TEXT)
+        controller.palette_preview_label.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+        
+        controller.palette_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        controller.palette_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=5)
+        controller.palette_frame.grid_columnconfigure(0, weight=1)
+        controller.palette_frame.grid_rowconfigure(0, weight=1)
+
+        ctk.CTkButton(tab, text="🎨 Criar Paleta de Cores", height=40, font=ctk.CTkFont(size=16, weight="bold"), command=controller.handle_create_palette, fg_color=controller.COLOR_PRIMARY_BUTTON, hover_color=controller.COLOR_PRIMARY_HOVER).grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+        
+
+    @staticmethod
+    def _create_convert_tab_widgets(tab, controller):
+        """Cria e posiciona os widgets dentro da aba Conversor de Formato."""
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(0, weight=1)
+        
+        # Frame de preview com grid
+        preview_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        preview_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 5))
+        preview_frame.grid_columnconfigure(0, weight=1)
+        preview_frame.grid_rowconfigure(0, weight=1)
+        
+        controller.preview_label_convert = ctk.CTkLabel(preview_frame, text="Selecione uma imagem para ver o preview", text_color=controller.COLOR_TEXT)
+        controller.preview_label_convert.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+        
+        # Frame para os controles da aba
+        controls_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        controls_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 10))
+        controls_frame.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkLabel(controls_frame, text="Novo formato de arquivo:").grid(row=0, column=0, padx=(10, 0), pady=(0, 0), sticky="w")
+        ctk.CTkLabel(controls_frame, text="Nome do arquivo de saída:").grid(row=1, column=0, padx=(10, 0), pady=(0, 0), sticky="w")
+
+        file_type_widget = ctk.CTkComboBox(controls_frame, values=["png", "jpg", "jpeg", "bmp", "tiff", "gif"], button_color=controller.COLOR_PRIMARY_BUTTON)
+        file_type_widget.set("png")
+        file_type_widget.grid(row=0, column=1, padx=(5, 0), pady=10, sticky="ew")
+        controller.file_type_var = file_type_widget
+
+        output_name_entry = ctk.CTkEntry(controls_frame)
+        output_name_entry.insert(0, "sprite")  # Valor padrão
+        output_name_entry.grid(row=1, column=1, padx=(5, 0), pady=10, sticky="ew")
+        controller.output_name_conversor = output_name_entry
+
+        
+        controller.btn_execute = ctk.CTkButton(controls_frame,text="↪️ Converter imagem",height=40,font=ctk.CTkFont(size=16, weight="bold"),command=controller._handle_convert_image, fg_color=controller.COLOR_PRIMARY_BUTTON,hover_color=controller.COLOR_PRIMARY_HOVER)
+        controller.btn_execute.grid(row=2, column=0, columnspan=2, padx=0, pady=10, sticky="ew")
