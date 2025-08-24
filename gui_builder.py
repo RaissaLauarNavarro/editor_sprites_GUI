@@ -51,16 +51,19 @@ class GUIBuilder:
         # Adiciona e configura cada aba
         tab_log = controller.tabview.add("Log de Atividades")
         tab_split = controller.tabview.add("Divisor de Sprites")
-        tab_palette = controller.tabview.add("Gerador de Paleta de Cores")
         tab_convert = controller.tabview.add("Conversor de Formato")
+        tab_palette = controller.tabview.add("Gerador de Paleta de Cores")
+        tab_editable_colors = controller.tabview.add("Editável de Cores")
         
         GUIBuilder._create_log_tab_widgets(tab_log, controller)
 
         GUIBuilder._create_split_tab_widgets(tab_split, controller)
 
+        GUIBuilder._create_convert_tab_widgets(tab_convert, controller)
+
         GUIBuilder._create_palette_tab_widgets(tab_palette, controller)
 
-        GUIBuilder._create_convert_tab_widgets(tab_convert, controller)
+        GUIBuilder.create_editable_colors_tab(tab_palette, controller)
 
         # Cria a barra de status e progresso na parte inferior do main_frame
         controller.progressbar = ctk.CTkProgressBar(app.main_frame, fg_color=controller.COLOR_FRAME, progress_color=controller.COLOR_PRIMARY_BUTTON)
@@ -85,7 +88,7 @@ class GUIBuilder:
     @staticmethod
     def _create_split_tab_widgets(tab, controller):
         """Cria e posiciona os widgets dentro da aba Divisor de Sprites."""
-        
+
         tab.grid_columnconfigure(0, weight=1)
         tab.grid_rowconfigure(0, weight=1)
         
@@ -128,19 +131,35 @@ class GUIBuilder:
     def _create_palette_tab_widgets(tab, controller):
         """Cria e posiciona os widgets dentro da aba Gerador de Paleta."""
         tab.grid_columnconfigure(0, weight=1)
-        tab.grid_rowconfigure(0, weight=1) 
-        tab.grid_rowconfigure(1, weight=1) 
+        tab.grid_rowconfigure(0, weight=1)
         
-        controller.palette_preview_label = ctk.CTkLabel(tab, text="Selecione uma imagem para ver o preview", text_color=controller.COLOR_TEXT)
-        controller.palette_preview_label.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        
-        controller.palette_frame = ctk.CTkFrame(tab, fg_color="transparent")
-        controller.palette_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=5)
-        controller.palette_frame.grid_columnconfigure(0, weight=1)
-        controller.palette_frame.grid_rowconfigure(0, weight=1)
+        # Frame de preview com grid
+        preview_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        preview_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 5))
+        preview_frame.grid_columnconfigure(0, weight=1)
+        preview_frame.grid_rowconfigure(0, weight=1)
 
-        ctk.CTkButton(tab, text="🎨 Criar Paleta de Cores", height=40, font=ctk.CTkFont(size=16, weight="bold"), command=controller.handle_create_palette, fg_color=controller.COLOR_PRIMARY_BUTTON, hover_color=controller.COLOR_PRIMARY_HOVER).grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+        controller.preview_label_convert = ctk.CTkLabel(preview_frame, text="Selecione uma imagem para ver o preview", text_color=controller.COLOR_TEXT)
+        controller.preview_label_convert.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
         
+        # Frame para os controles da aba
+        controls_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        controls_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 10))
+        controls_frame.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkLabel(preview_frame, text="Número de cores da paleta:").grid(row=0, column=0, padx=(0, 5), pady=(0, 0), sticky="w")
+        ctk.CTkLabel(preview_frame, text="Distância mínima entre cores no espaço RGB:").grid(row=1, column=0, padx=(0, 5), pady=(0, 0), sticky="w")
+
+        controller.num_colors_slider = ctk.CTkSlider(preview_frame, from_=2, to=20, number_of_steps=20, width=200)
+        controller.num_colors_slider.set(8)
+        controller.num_colors_slider.grid(row=0, column=1, padx=(0, 5), pady=(0, 10), sticky="ew")
+        
+        controller.distancia_slider = ctk.CTkSlider(preview_frame, from_=0, to=441, number_of_steps=441, width=200)
+        controller.distancia_slider.set(32)
+        controller.distancia_slider.grid(row=1, column=1, padx=(0, 5), pady=(0, 10), sticky="ew")
+        
+        ctk.CTkButton(tab, text="🎨 Criar Paleta de Cores", height=40, font=ctk.CTkFont(size=16, weight="bold"), command=controller.handle_create_palette, fg_color=controller.COLOR_PRIMARY_BUTTON, hover_color=controller.COLOR_PRIMARY_HOVER).grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+    
 
     @staticmethod
     def _create_convert_tab_widgets(tab, controller):
@@ -175,6 +194,24 @@ class GUIBuilder:
         output_name_entry.grid(row=1, column=1, padx=(5, 0), pady=10, sticky="ew")
         controller.output_name_conversor = output_name_entry
 
-        
         controller.btn_execute = ctk.CTkButton(controls_frame,text="↪️ Converter imagem",height=40,font=ctk.CTkFont(size=16, weight="bold"),command=controller._handle_convert_image, fg_color=controller.COLOR_PRIMARY_BUTTON,hover_color=controller.COLOR_PRIMARY_HOVER)
         controller.btn_execute.grid(row=2, column=0, columnspan=2, padx=0, pady=10, sticky="ew")
+
+
+    @staticmethod
+    def create_editable_colors_tab(tab, controller):
+        """Cria e posiciona os widgets dentro da aba Editável de Cores."""
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(0, weight=1) 
+        tab.grid_rowconfigure(1, weight=1) 
+        
+        controller.palette_preview_label = ctk.CTkLabel(tab, text="Selecione uma imagem para ver o preview", text_color=controller.COLOR_TEXT)
+        controller.palette_preview_label.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+        
+        controller.palette_frame = ctk.CTkFrame(tab, fg_color="transparent")
+        controller.palette_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=5)
+        controller.palette_frame.grid_columnconfigure(0, weight=1)
+        controller.palette_frame.grid_rowconfigure(0, weight=1)
+
+        ctk.CTkButton(tab, text="🎨 Criar Paleta de Cores", height=40, font=ctk.CTkFont(size=16, weight="bold"), command=controller.handle_create_palette, fg_color=controller.COLOR_PRIMARY_BUTTON, hover_color=controller.COLOR_PRIMARY_HOVER).grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+        
