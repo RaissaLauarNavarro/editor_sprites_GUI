@@ -37,7 +37,7 @@ def select_image_path() -> Optional[str]:
     """
     return filedialog.askopenfilename(
         title="Selecione um arquivo de imagem",
-        filetypes=[("Imagens", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif")]
+        filetypes=[("Imagens", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif *.webp"), ("Todos os arquivos", "*.*")]
     )
 
 def select_output_folder() -> Optional[str]:
