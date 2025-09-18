@@ -13,19 +13,16 @@ class App(ctk.CTk):
         # Inicializa o controlador antes de construir a UI
         self.controller = MainController(self)
 
-        # Configuração da Janela Principal
         self.title("Editor de Sprites")
         self.geometry("1100x650")
         self.minsize(800, 600)
         self._set_appearance_mode("dark")
         self.configure(fg_color=self.controller.COLOR_BACKGROUND)
 
-        # Configuração do Layout da Janela
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # Criação dos Widgets usando o construtor da GUI
         GUIBuilder.build(self, self.controller)
         self.controller._initialize()
 

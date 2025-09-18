@@ -3,11 +3,14 @@ import os
 import threading
 from typing import Optional
 from PIL import Image, ImageOps, ImageDraw
+from tkinter import colorchooser, filedialog
 
 from image_processor import process_and_save_blocks
 from color_palette_generator import get_color_palette
 from file_conversor import convert_image_type
 from utils import update_log, open_output_folder, select_image_path, select_output_folder
+from image_editor import replace_color, hex_to_rgb
+
 
 class MainController:
     """
@@ -35,6 +38,7 @@ class MainController:
         # --- Variáveis de estado ---
         self.image_path: str = ""
         self.end_folder: str = ""
+        self.modified_image: Optional[Image.Image] = None
         self._after_id: Optional[str] = None
         self.ctk_img_preview: Optional[ctk.CTkImage] = None
         self.palette_colors: list = []
@@ -47,45 +51,54 @@ class MainController:
         self.log_textbox = None
         self.tabview = None
         self.status_label = None
-        self.palette_frame = None
         self.palette_preview_label = None
         self.output_name_conversor = None
         self.output_name_processor = None
         self.file_type_var = None
+        self.palette_frame = None
         
-        # Conecta a atualização do preview à variável de tamanho do bloco
         self.bloco_px_var.trace_add("write", lambda *args: self._update_grid_preview())
+
+    # ======================
+    #  Inicialização / Utils
+    # ======================
 
     def _initialize(self) -> None:
         """Chamado após a construção da GUI para inicializações finais"""
         update_log(self.log_textbox, "Bem-vindo ao Editor de Sprites!", self.status_label)
-    
 
-    def _safe_configure_preview(self, image: Optional[ctk.CTkImage] = None, text: str = "") -> None:
-        """Configura o label de preview de forma segura"""
-        try:
-            if image is None:
-                self.ctk_img_preview = None
-                self.preview_label_split.configure(image="", text=text)
-            else:
-                self.preview_label_split.configure(image=image, text="")
-        except Exception:
-            pass
 
+    def _is_light_color(self, hex_color: str) -> bool:
+        """Verifica se uma cor em formato hexadecimal é clara ou escura"""
+        hex_color = hex_color.lstrip('#')
+        rgb = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+        luminosity = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255
+        return luminosity > 0.5
+
+
+    def _copy_to_clipboard(self, text: str) -> None:
+        """Copia o texto para a área de transferência e atualiza o log"""
+        self.app.clipboard_clear()
+        self.app.clipboard_append(text)
+        update_log(self.log_textbox, f"'{text}' copiado para a área de transferência", self.status_label)
+
+    # ======================
+    #  Arquivos e Pastas
+    # ======================
 
     def _load_image_path(self, path: str) -> None:
         """Carrega o caminho da imagem e atualiza os previews"""
-
         if path:
             if self.palette_frame:
                 for widget in self.palette_frame.winfo_children():
                     widget.destroy()
 
             self.image_path = path
+            self.modified_image = None
             update_log(self.log_textbox, f"Imagem selecionada: {os.path.basename(self.image_path)}", self.status_label)
-            self._update_palette_preview(path)
             self._update_grid_preview()
             self._update_convert_preview(path)
+            self._update_palette_preview_from_path(path, self.palette_preview_label)
 
 
     def handle_choose_image(self) -> None:
@@ -106,6 +119,43 @@ class MainController:
         """Abre a pasta de saída"""
         open_output_folder(self.end_folder, self.log_textbox, self.status_label)
 
+    # ======================
+    #  Previews
+    # ======================
+
+    def _safe_configure_preview(self, image: Optional[ctk.CTkImage] = None, text: str = "") -> None:
+        """Configura o label de preview de forma segura"""
+        try:
+            if image is None:
+                self.ctk_img_preview = None
+                self.preview_label_split.configure(image="", text=text)
+            else:
+                self.preview_label_split.configure(image=image, text="")
+        except Exception:
+            pass
+
+
+    def _update_preview_from_image_object(self, image: Image.Image, preview_label: ctk.CTkLabel) -> None:
+        """Atualiza um label de preview com um objeto de imagem PIL."""
+        try:
+            preview_box_w = preview_label.winfo_width()
+            preview_box_h = preview_label.winfo_height()
+
+            if preview_box_w <= 0 or preview_box_h <= 0:
+                preview_box_w = 400
+                preview_box_h = 300
+            scale = min(preview_box_w / image.width, preview_box_h / image.height)
+            new_w = max(1, int(image.width * scale))
+            new_h = max(1, int(image.height * scale))
+            
+            preview_image = image.resize((new_w, new_h), Image.Resampling.NEAREST)
+            ctk_image = ctk.CTkImage(light_image=preview_image, size=preview_image.size)
+            
+            preview_label.configure(image=ctk_image, text="")
+            preview_label.image = ctk_image
+        except Exception as e:
+            preview_label.configure(text=f"Erro ao atualizar preview: {e}")
+
 
     def _update_grid_preview(self) -> None:
         """Atualiza o preview da grade com base na imagem e tamanho do bloco"""
@@ -122,6 +172,9 @@ class MainController:
 
             original_image = Image.open(self.image_path).convert("RGBA")
             orig_w, orig_h = original_image.size
+            
+            image_for_preview = self.modified_image if self.modified_image else original_image
+
             preview_box_w = self.preview_label_split.winfo_width() - 40
             preview_box_h = self.preview_label_split.winfo_height() - 40
             if preview_box_w <= 1 or preview_box_h <= 1:
@@ -146,20 +199,11 @@ class MainController:
             self._safe_configure_preview(text=f"Erro no preview:\n{e}")
 
 
-    def _update_palette_preview(self, path: str) -> None:
-        """Atualiza o preview da paleta de cores"""
+    def _update_palette_preview_from_path(self, path: str) -> None:
+        """Atualiza o preview da paleta de cores a partir de um caminho de arquivo."""
         try:
-            original_image = Image.open(path).convert("RGBA")
-            preview_box_w = self.palette_preview_label.winfo_width() - 20
-            preview_box_h = 250
-            if preview_box_w <= 0:
-                preview_box_w = 300
-            scale = min(preview_box_w / original_image.width, preview_box_h / original_image.height)
-            new_w = max(1, int(original_image.width * scale))
-            new_h = max(1, int(original_image.height * scale))
-            preview_image = original_image.resize((new_w, new_h), Image.Resampling.NEAREST)
-            self.ctk_palette_preview = ctk.CTkImage(light_image=preview_image, size=preview_image.size)
-            self.palette_preview_label.configure(image=self.ctk_palette_preview, text="")
+            image_to_preview = self.modified_image if self.modified_image else Image.open(path).convert("RGBA")
+            self._update_preview_from_image_object(image_to_preview, self.palette_preview_label)
         except Exception as e:
             self.palette_preview_label.configure(text=f"Erro ao carregar preview: {e}")
 
@@ -181,6 +225,9 @@ class MainController:
         except Exception as e:
             self.preview_label_convert.configure(text=f"Erro ao carregar preview: {e}")
 
+    # ======================
+    #  Processamento (split)
+    # ======================
 
     def handle_split_image(self) -> None:
         """Inicia o processamento da imagem em blocos"""
@@ -242,10 +289,12 @@ class MainController:
         """Finaliza o processamento e atualiza a UI"""
         self.btn_execute.configure(state="normal")
 
+    # ======================
+    #  Paleta de Cores / Edição
+    # ======================
 
     def handle_create_palette(self) -> None:
         """Cria a paleta de cores a partir da imagem"""
-
         path = self.image_path
         if not path:
             update_log(self.log_textbox, "Erro: Selecione uma imagem primeiro", self.status_label)
@@ -257,20 +306,23 @@ class MainController:
         for widget in self.palette_frame.winfo_children():
             widget.destroy()
         try:
-            self.palette_colors = get_color_palette(path)
-            self._update_palette_preview(path)
+            image_for_palette = self.modified_image if self.modified_image else Image.open(path).convert("RGBA")
+            self.palette_colors = get_color_palette(image_for_palette) 
+            
+            self._update_palette_preview_from_path(path)
             max_cols = 8
-            button_height = 40
             num_rows = (len(self.palette_colors) + max_cols - 1) // max_cols
-            for idx, color in enumerate(self.palette_colors):
+
+            for idx, color_hex in enumerate(self.palette_colors): 
                 row = idx // max_cols
                 col = idx % max_cols
                 color_button = ctk.CTkButton(
-                    self.palette_frame, text=color, fg_color=color,
-                    text_color="black" if self._is_light_color(color) else "white",
-                    hover_color=color, command=lambda c=color: self._copy_to_clipboard(c),
-                    height=button_height
+                    self.palette_frame, text=color_hex, fg_color=color_hex, 
+                    text_color="black" if self._is_light_color(color_hex) else "white",
+                    hover_color=color_hex, 
+                    command=lambda c_hex=color_hex, btn=None: self.handle_replace_color_request(c_hex, btn)
                 )
+                color_button.configure(command=lambda c_hex=color_hex, btn=color_button: self.handle_replace_color_request(c_hex, btn))
                 color_button.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
             for col in range(max_cols):
                 self.palette_frame.grid_columnconfigure(col, weight=1)
@@ -279,24 +331,65 @@ class MainController:
         except Exception as e:
             self.palette_colors = []
             update_log(self.log_textbox, f"ERRO ao criar paleta de cores: {e}", self.status_label)
-        update_log(self.log_textbox, "Paleta de cores criada com sucesso! Clique em uma cor para copiar", self.status_label)
+        update_log(self.log_textbox, "Paleta de cores criada! Clique em uma cor para substituí-la.", self.status_label)
         self.log_label.configure(text="Paleta de cores criada com sucesso!")
 
 
-    def _is_light_color(self, hex_color: str) -> bool:
-        """Verifica se uma cor em formato hexadecimal é clara ou escura"""
-        hex_color = hex_color.lstrip('#')
-        rgb = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
-        luminosity = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255
-        return luminosity > 0.5
+    def handle_replace_color_request(self, old_color_hex: str, clicked_button: ctk.CTkButton) -> None:
+        """Solicita ao usuário uma nova cor e inicia a substituição."""
+        if not self.image_path:
+            update_log(self.log_textbox, "Erro: Nenhuma imagem carregada.", self.status_label)
+            return
+
+        color_data = colorchooser.askcolor(title="Escolha a nova cor")
+        if color_data and color_data[0]:
+            new_color_rgb = tuple(int(c) for c in color_data[0])
+            new_color_hex = color_data[1]
+
+            update_log(self.log_textbox, f"Substituindo {old_color_hex} por {new_color_hex}...", self.status_label)
+
+            image_to_process = self.modified_image.copy() if self.modified_image else Image.open(self.image_path).convert("RGBA")
+            old_color_rgb = hex_to_rgb(old_color_hex)
+
+            self.modified_image = replace_color(image_to_process, old_color_rgb, new_color_rgb)
+            
+            self._update_preview_from_image_object(self.modified_image, self.palette_preview_label)
+            
+            if clicked_button:
+                clicked_button.configure(
+                    fg_color=new_color_hex,
+                    text_color="black" if self._is_light_color(new_color_hex) else "white",
+                    text=new_color_hex, 
+                    hover_color=new_color_hex
+                )
+            
+            update_log(self.log_textbox, "Substituição concluída. Preview e botão atualizados.", self.status_label)
+        else:
+            update_log(self.log_textbox, "Seleção de nova cor cancelada.", self.status_label)
 
 
-    def _copy_to_clipboard(self, text: str) -> None:
-        """Copia o texto para a área de transferência e atualiza o log"""
-        self.app.clipboard_clear()
-        self.app.clipboard_append(text)
-        update_log(self.log_textbox, f"'{text}' copiado para a área de transferência", self.status_label)
+    def handle_save_modified_image(self) -> None:
+        """Salva a imagem que teve suas cores modificadas."""
+        if not self.modified_image:
+            update_log(self.log_textbox, "Nenhuma modificação para salvar. Substitua uma cor primeiro.", self.status_label)
+            return
 
+        file_path = filedialog.asksaveasfilename(
+            title="Salvar imagem modificada como...",
+            defaultextension=".png",
+            filetypes=[("PNG", "*.png"), ("JPEG", "*.jpg"), ("BMP", "*.bmp"), ("Todos os arquivos", "*.*")]
+        )
+
+        if file_path:
+            try:
+                self.modified_image.save(file_path)
+                update_log(self.log_textbox, f"Imagem modificada salva em: {file_path}", self.status_label)
+            except Exception as e:
+                update_log(self.log_textbox, f"Erro ao salvar a imagem: {e}", self.status_label)
+
+    # ======================
+    #  Conversão de Imagem
+    # ======================
 
     def _handle_convert_image(self) -> None:
         """Converte a imagem selecionada para o formato escolhido e salva na pasta de saída"""
@@ -315,18 +408,17 @@ class MainController:
             update_log(self.log_textbox, "Erro: Selecione um formato de arquivo válido", self.status_label)
             self.log_label.configure(text="Erro: Selecione um formato de arquivo válido")
             return
-        
-        output_name = self.output_name_conversor.get()
+
+        output_name = self.output_name_conversor.get().strip()
         if not output_name:
-            update_log(self.log_textbox, "Erro: Digite um nome para o arquivo de saída", self.status_label)
-            self.log_label.configure(text="Erro: Digite um nome para o arquivo de saída")
+            update_log(self.log_textbox, "Erro: Digite um nome para o arquivo convertido", self.status_label)
+            self.log_label.configure(text="Erro: Digite um nome para o arquivo convertido")
             return
+        
         try:
-            output_path = convert_image_type(self.image_path, self.end_folder, file_type, output_name)
-            if output_path:
-                update_log(self.log_textbox, f"Imagem convertida e salva em: {output_path}", self.status_label)
-                self.log_label.configure(text="Imagem convertida com sucesso!")
-                self._update_convert_preview(output_path)
+            convert_image_type(self.image_path, self.end_folder, output_name, file_type)
+            update_log(self.log_textbox, f"Imagem convertida para {file_type.upper()} com sucesso!", self.status_label)
+            self.log_label.configure(text="Imagem convertida com sucesso!") 
         except Exception as e:
-            update_log(self.log_textbox, f"Erro ao converter imagem: {e}", self.status_label)
-            self.preview_label_convert.configure(text=f"Erro ao carregar preview: {e}")
+            update_log(self.log_textbox, f"Erro ao converter a imagem: {e}", self.status_label)
+            self.log_label.configure(text="Erro ao converter a imagem") 
