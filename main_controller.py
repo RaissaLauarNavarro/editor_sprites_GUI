@@ -95,10 +95,19 @@ class MainController:
 
             self.image_path = path
             self.modified_image = None
+
+            # define um tamanho para a imagem
+            if(Image.open(self.image_path).width > 1920 or Image.open(self.image_path).height > 1920):
+                update_log(self.log_textbox, f"A imagem selecionada é muito grande. Aceitamos até 1920x1920.", self.status_label)
+                self.image_path = ""
+                self.log_label.configure(text="Erro: A imagem é muito grande. Máximo 1920x1920.")
+                self._safe_configure_preview(text="Erro: A imagem é muito grande. Máximo 1920x1920.")
+                return
+
             update_log(self.log_textbox, f"Imagem selecionada: {os.path.basename(self.image_path)}", self.status_label)
             self._update_grid_preview()
             self._update_convert_preview(path)
-            self._update_palette_preview_from_path(path, self.palette_preview_label)
+            self._update_palette_preview_from_path(path)
 
 
     def handle_choose_image(self) -> None:
