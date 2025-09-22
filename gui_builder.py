@@ -185,7 +185,7 @@ class GUIBuilder:
         controller.file_type_var = file_type_widget
 
         output_name_entry = ctk.CTkEntry(controls_frame)
-        output_name_entry.insert(0, "sprite")  # Valor padrão
+        output_name_entry.insert(0, "sprite") 
         output_name_entry.grid(row=1, column=1, padx=(5, 0), pady=10, sticky="ew")
         controller.output_name_conversor = output_name_entry
 
