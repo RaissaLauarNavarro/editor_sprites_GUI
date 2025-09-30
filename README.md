@@ -1,99 +1,68 @@
 
-# 📦Editor de Sprites com Interface (com filtro de conteúdo e múltiplos arquivos)
+# ✨ Editor de Sprites
 
-Este script em Python percorre **todas as imagens PNG** dentro de uma pasta, divide cada imagem em blocos de tamanho definido (por padrão 16x16 pixels) e salva **apenas os blocos que possuem conteúdo visível** (não totalmente brancos ou transparentes).
+Este é um aplicativo de desktop com interface gráfica (GUI) para edição de imagens, ideal para desenvolvedores de jogos e artistas que trabalham com sprites e pixel art. Desenvolvido com customtkinter, o programa oferece várias ferramentas para otimizar e manipular seus arquivos de imagem.
 
-Para melhor organização, cada imagem processada gera **uma subpasta** com o mesmo nome da imagem original, onde serão salvos os blocos correspondentes.
 
-# 🖼️ Exemplo de uso
+# 🚀 Funcionalidades
 
-Suponha que você tenha uma pasta `imagensEntrada` com:
+Editor de Sprites oferece as seguintes ferramentas em um único lugar:
 
-```
-personagem.png
-itens.png
-tileset.png
-```
+- Divisor de Sprites: Divide uma imagem spritesheet em blocos individuais de tamanho definido. Você pode configurar o tamanho do bloco e aplicar um fator de escala para ampliar o resultado.
 
-O script irá gerar, dentro da pasta de saída (`imagens_divididas`), subpastas como:
+- Gerador de Paleta de Cores: Extrai as cores principais de uma imagem e gera uma paleta clicável.
 
-```
-imagens_divididas/
-  personagem/
-    personagem_0000.png
-    personagem_0001.png
-    ...
-  itens/
-    itens_0000.png
-    itens_0001.png
-    ...
-  tileset/
-    tileset_0000.png
-    tileset_0001.png
-    ...
+- Substituição de Cores: Permite substituir uma cor da paleta gerada por outra de sua escolha. É perfeito para criar variações de cores de personagens ou objetos.
 
-```
+- Conversor de Formato: Converte imagens entre diversos formatos de arquivo, como PNG, JPG, BMP, e outros.
 
-# ⚙️ Configuração
 
-Antes de rodar o script, edite as seguintes variáveis no topo do arquivo:
+# 📥 Como baixar e utilizar
 
-```PYTHON
-# Tamanho do bloco em pixels
-tamanho_bloco = 16
+Para a maneira mais fácil de usar o aplicativo, basta baixar o arquivo executável (.exe) da página de releases.
 
-# Pasta de entrada contendo as imagens PNG
-pasta_entrada = 'imagensEntrada/'
+Não é necessário instalar Python ou qualquer outra biblioteca. Apenas baixe e execute o arquivo Editor_de_Sprites.exe.
 
-# Diretório onde os blocos serão salvos
-diretorio_saida = 'imagens_divididas'
 
-# Fator de escala (opcional) — aumenta o tamanho dos blocos na saída
-# Ex.: fator_escala = 32 transforma blocos 16x16 em imagens 512x512
-fator_escala = 32
+# ⚙️ Para Desenvolvedores
 
-```
+Se você deseja rodar o projeto a partir do código-fonte ou contribuir com o desenvolvimento, siga as instruções abaixo.
 
-# ▶️ Como executar
+## Requisitos:
 
-Abra o terminal na pasta do script e execute:
+  Certifique-se de ter o Python 3.x instalado.
+
+O projeto utiliza as seguintes bibliotecas:
+
+  - customtkinter: Para a interface gráfica.
+
+  - Pillow: Para manipulação de imagens.
+
+  - colorthief: Para extração da paleta de cores.
+
+Instale-as executando o seguinte comando no seu terminal:
 
 ```PYTHON
-python dividir_imagens_em_blocos.py
+
+pip install customtkinter pillow colorthief
 ```
 
-# 🧠 Requisitos
+## Como executar
+- Clone este repositório ou baixe os arquivos.
 
-- Python 3.x
-- Biblioteca Pillow para manipulação de imagens:
+- Navegue até o diretório do projeto.
 
-Instale com:
+- Execute o arquivo principal app.py:
 
 ```PYTHON
-pip install pillow
+
+python app.py
 ```
 
-# 📁 Saída
+# 🧠 Como Funciona
 
-* Cada imagem PNG da pasta de entrada será processada separadamente.
-* Os blocos serão salvos na pasta de saída, dentro de uma **subpasta** com o nome da imagem original (sem extensão).
-* Arquivos nomeados no formato:
+Divisor: O divisor de sprites percorre a imagem em blocos do tamanho especificado e salva cada bloco como um arquivo PNG separado, ideal para importar em engines de jogos. A função process_and_save_blocks em image_processor.py lida com essa lógica, incluindo um callback de progresso para a barra de status da GUI.
 
-  ```
-  nomeOriginal_0000.png
-  nomeOriginal_0001.png
-  ...
+Gerador de Paleta: A biblioteca colorthief é utilizada na função get_color_palette para identificar as cores predominantes da imagem de forma eficiente. Um algoritmo de filtragem personalizado garante que cores muito semelhantes não sejam incluídas na paleta final.
 
-  ```
-
-# 🧪 Lógica de filtragem de blocos
-
-Um bloco só será salvo se:
-
-Contém ao menos um pixel visível (alpha > 0)
-
-E não é completamente branco (RGB != 255,255,255)
-
-# 📝 Licença
-
-Sinta-se livre para usar e modificar!
+Substituição de Cores: A função replace_color em image_editor.py itera sobre os pixels da imagem e substitui as cores que estão dentro de uma certa tolerância de distância da cor original, permitindo uma substituição precisa.
