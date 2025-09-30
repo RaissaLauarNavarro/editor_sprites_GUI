@@ -60,15 +60,15 @@ class GUIBuilder:
         # GUIBuilder._create_resize_tab_widgets(tab_resize, controller)
         GUIBuilder._create_palette_tab_widgets(tab_palette, controller)
 
-        controller.progressbar = ctk.CTkProgressBar(app.main_frame, fg_color=controller.COLOR_FRAME, progress_color=controller.COLOR_PRIMARY_BUTTON)
-        controller.progressbar.set(0)
-        controller.progressbar.grid(row=1, column=0, sticky="ew", pady=(10, 0), padx=5)
+        # controller.progressbar = ctk.CTkProgressBar(app.main_frame, fg_color=controller.COLOR_FRAME, progress_color=controller.COLOR_PRIMARY_BUTTON)
+        # controller.progressbar.set(0)
+        # controller.progressbar.grid(row=1, column=0, sticky="ew", pady=(10, 0), padx=5)
         
-        controller.status_label = ctk.CTkLabel(app.main_frame, text="", text_color=controller.COLOR_SUCCESS)
-        controller.status_label.grid(row=2, column=0, sticky="sw", padx=5)
+        # controller.status_label = ctk.CTkLabel(app.main_frame, text="", text_color=controller.COLOR_SUCCESS)
+        # controller.status_label.grid(row=2, column=0, sticky="sw", padx=5)
         
-        controller.progressbar.grid_remove()
-        controller.status_label.grid_remove()
+        # controller.progressbar.grid_remove()
+        # controller.status_label.grid_remove()
 
 
     @staticmethod

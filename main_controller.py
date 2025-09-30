@@ -65,7 +65,7 @@ class MainController:
 
     def _initialize(self) -> None:
         """Chamado após a construção da GUI para inicializações finais"""
-        update_log(self.log_textbox, "Bem-vindo ao Editor de Sprites!", self.status_label)
+        update_log(self.log_textbox, "Bem-vindo ao Editor de Sprites!", self.log_label)
 
 
     def _is_light_color(self, hex_color: str) -> bool:
@@ -80,7 +80,7 @@ class MainController:
         """Copia o texto para a área de transferência e atualiza o log"""
         self.app.clipboard_clear()
         self.app.clipboard_append(text)
-        update_log(self.log_textbox, f"'{text}' copiado para a área de transferência", self.status_label)
+        update_log(self.log_textbox, f"'{text}' copiado para a área de transferência", self.log_label)
 
     # ======================
     #  Arquivos e Pastas
@@ -98,13 +98,13 @@ class MainController:
 
             # define um tamanho para a imagem
             if(Image.open(self.image_path).width > 1920 or Image.open(self.image_path).height > 1920):
-                update_log(self.log_textbox, f"A imagem selecionada é muito grande. Aceitamos até 1920x1920.", self.status_label)
+                update_log(self.log_textbox, f"A imagem selecionada é muito grande. Aceitamos até 1920x1920.", self.log_label)
                 self.image_path = ""
                 self.log_label.configure(text="Erro: A imagem é muito grande. Máximo 1920x1920.")
                 self._safe_configure_preview(text="Erro: A imagem é muito grande. Máximo 1920x1920.")
                 return
 
-            update_log(self.log_textbox, f"Imagem selecionada: {os.path.basename(self.image_path)}", self.status_label)
+            update_log(self.log_textbox, f"Imagem selecionada: {os.path.basename(self.image_path)}", self.log_label)
             self._update_grid_preview()
             self._update_convert_preview(path)
             self._update_palette_preview_from_path(path)
@@ -121,12 +121,12 @@ class MainController:
         folder = select_output_folder()
         if folder:
             self.end_folder = folder
-            update_log(self.log_textbox, "Pasta de saída definida", self.status_label)
+            update_log(self.log_textbox, "Pasta de saída definida", self.log_label)
 
 
     def handle_open_folder_exit(self) -> None:
         """Abre a pasta de saída"""
-        open_output_folder(self.end_folder, self.log_textbox, self.status_label)
+        open_output_folder(self.end_folder, self.log_textbox, self.log_label)
 
     # ======================
     #  Previews
@@ -241,12 +241,12 @@ class MainController:
     def handle_split_image(self) -> None:
         """Inicia o processamento da imagem em blocos"""
         if not self.image_path:
-            update_log(self.log_textbox, "Erro: Selecione a imagem", self.status_label)
+            update_log(self.log_textbox, "Erro: Selecione a imagem", self.log_label)
             self.log_label.configure(text="Erro: Selecione a imagem")
             return
         
         if not self.end_folder:
-            update_log(self.log_textbox, "Erro: Selecione a pasta de saída", self.status_label)
+            update_log(self.log_textbox, "Erro: Selecione a pasta de saída", self.log_label)
             self.log_label.configure(text="Erro: Selecione a pasta de saída")
             return
         try:
@@ -255,7 +255,7 @@ class MainController:
             if bloco_px <= 0 or scale <= 0:
                 raise ValueError("Tamanho do bloco e escala devem ser maiores que zero.")
         except (ValueError, TypeError):
-            update_log(self.log_textbox, "Erro: Tamanho do bloco ou fator de escala inválido", self.status_label)
+            update_log(self.log_textbox, "Erro: Tamanho do bloco ou fator de escala inválido", self.log_label)
             self.log_label.configure(text="Erro: Tamanho do bloco ou fator de escala inválido")
             return
         self._start_threaded_processing(bloco_px, scale)
@@ -264,9 +264,9 @@ class MainController:
     def _start_threaded_processing(self, bloco_px: int, scale: int) -> None:
         """Inicia o processamento em uma thread separada para evitar travamento da UI"""
         self.btn_execute.configure(state="disabled")
-        update_log(self.log_textbox, "Iniciando processamento...", self.status_label)
-        if self.status_label:
-            self.status_label.configure(text="Iniciando processamento...", text_color=self.COLOR_TEXT)
+        update_log(self.log_textbox, "Iniciando processamento...", self.log_label)
+        if self.log_label:
+            self.log_label.configure(text="Iniciando processamento...", text_color=self.COLOR_TEXT)
         processing_thread = threading.Thread(
             target=self._thread_processing,
             args=(self.image_path, self.end_folder, bloco_px, scale)
@@ -284,12 +284,12 @@ class MainController:
                 output_name,
                 bloco_px,
                 scale,
-                lambda progress: self.app.after(0, self._update_progress, progress)
+                None # Removido o callback
             )
-            self.app.after(0, update_log, self.log_textbox, "✨ Processamento concluído!", self.status_label)
+            self.app.after(0, update_log, self.log_textbox, "✨ Processamento concluído!", self.log_label)
             self.log_label.configure(text="Peocessamento concluído!")
         except Exception as e:
-            self.app.after(0, update_log, self.log_textbox, f"ERRO: {e}", self.status_label)
+            self.app.after(0, update_log, self.log_textbox, f"ERRO: {e}", self.log_label)
         finally:
             self.app.after(0, self._end_processing)
 
@@ -306,11 +306,11 @@ class MainController:
         """Cria a paleta de cores a partir da imagem"""
         path = self.image_path
         if not path:
-            update_log(self.log_textbox, "Erro: Selecione uma imagem primeiro", self.status_label)
+            update_log(self.log_textbox, "Erro: Selecione uma imagem primeiro", self.log_label)
             self.log_label.configure(text="Erro: Selecione uma imagem primeiro")
             return
 
-        update_log(self.log_textbox, f"Criando paleta de cores para: {os.path.basename(path)}", self.status_label)
+        update_log(self.log_textbox, f"Criando paleta de cores para: {os.path.basename(path)}", self.log_label)
 
         for widget in self.palette_frame.winfo_children():
             widget.destroy()
@@ -339,15 +339,15 @@ class MainController:
                 self.palette_frame.grid_rowconfigure(row, weight=1)
         except Exception as e:
             self.palette_colors = []
-            update_log(self.log_textbox, f"ERRO ao criar paleta de cores: {e}", self.status_label)
-        update_log(self.log_textbox, "Paleta de cores criada! Clique em uma cor para substituí-la.", self.status_label)
+            update_log(self.log_textbox, f"ERRO ao criar paleta de cores: {e}", self.log_label)
+        update_log(self.log_textbox, "Paleta de cores criada! Clique em uma cor para substituí-la.", self.log_label)
         self.log_label.configure(text="Paleta de cores criada com sucesso!")
 
 
     def handle_replace_color_request(self, old_color_hex: str, clicked_button: ctk.CTkButton) -> None:
         """Solicita ao usuário uma nova cor e inicia a substituição."""
         if not self.image_path:
-            update_log(self.log_textbox, "Erro: Nenhuma imagem carregada.", self.status_label)
+            update_log(self.log_textbox, "Erro: Nenhuma imagem carregada.", self.log_label)
             return
 
         color_data = colorchooser.askcolor(title="Escolha a nova cor")
@@ -355,7 +355,7 @@ class MainController:
             new_color_rgb = tuple(int(c) for c in color_data[0])
             new_color_hex = color_data[1]
 
-            update_log(self.log_textbox, f"Substituindo {old_color_hex} por {new_color_hex}...", self.status_label)
+            update_log(self.log_textbox, f"Substituindo {old_color_hex} por {new_color_hex}...", self.log_label)
 
             image_to_process = self.modified_image.copy() if self.modified_image else Image.open(self.image_path).convert("RGBA")
             old_color_rgb = hex_to_rgb(old_color_hex)
@@ -372,15 +372,15 @@ class MainController:
                     hover_color=new_color_hex
                 )
             
-            update_log(self.log_textbox, "Substituição concluída. Preview e botão atualizados.", self.status_label)
+            update_log(self.log_textbox, "Substituição concluída. Preview e botão atualizados.", self.log_label)
         else:
-            update_log(self.log_textbox, "Seleção de nova cor cancelada.", self.status_label)
+            update_log(self.log_textbox, "Seleção de nova cor cancelada.", self.log_label)
 
 
     def handle_save_modified_image(self) -> None:
         """Salva a imagem que teve suas cores modificadas."""
         if not self.modified_image:
-            update_log(self.log_textbox, "Nenhuma modificação para salvar. Substitua uma cor primeiro.", self.status_label)
+            update_log(self.log_textbox, "Nenhuma modificação para salvar. Substitua uma cor primeiro.", self.log_label)
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -392,9 +392,9 @@ class MainController:
         if file_path:
             try:
                 self.modified_image.save(file_path)
-                update_log(self.log_textbox, f"Imagem modificada salva em: {file_path}", self.status_label)
+                update_log(self.log_textbox, f"Imagem modificada salva em: {file_path}", self.log_label)
             except Exception as e:
-                update_log(self.log_textbox, f"Erro ao salvar a imagem: {e}", self.status_label)
+                update_log(self.log_textbox, f"Erro ao salvar a imagem: {e}", self.log_label)
 
     # ======================
     #  Conversão de Imagem
@@ -403,31 +403,31 @@ class MainController:
     def _handle_convert_image(self) -> None:
         """Converte a imagem selecionada para o formato escolhido e salva na pasta de saída"""
         if not self.image_path:
-            update_log(self.log_textbox, "Erro: Selecione a imagem", self.status_label)
+            update_log(self.log_textbox, "Erro: Selecione a imagem", self.log_label)
             self.log_label.configure(text="Erro: Selecione a imagem") 
             return
         
         if not self.end_folder:
-            update_log(self.log_textbox, "Erro: Selecione a pasta de saída", self.status_label)
+            update_log(self.log_textbox, "Erro: Selecione a pasta de saída", self.log_label)
             self.log_label.configure(text="Erro: Selecione a pasta de saída")
             return
         
         file_type = self.file_type_var.get()
         if not file_type:
-            update_log(self.log_textbox, "Erro: Selecione um formato de arquivo válido", self.status_label)
+            update_log(self.log_textbox, "Erro: Selecione um formato de arquivo válido", self.log_label)
             self.log_label.configure(text="Erro: Selecione um formato de arquivo válido")
             return
 
         output_name = self.output_name_conversor.get().strip()
         if not output_name:
-            update_log(self.log_textbox, "Erro: Digite um nome para o arquivo convertido", self.status_label)
+            update_log(self.log_textbox, "Erro: Digite um nome para o arquivo convertido", self.log_label)
             self.log_label.configure(text="Erro: Digite um nome para o arquivo convertido")
             return
         
         try:
             convert_image_type(self.image_path, self.end_folder, output_name, file_type)
-            update_log(self.log_textbox, f"Imagem convertida para {file_type.upper()} com sucesso!", self.status_label)
+            update_log(self.log_textbox, f"Imagem convertida para {file_type.upper()} com sucesso!", self.log_label)
             self.log_label.configure(text="Imagem convertida com sucesso!") 
         except Exception as e:
-            update_log(self.log_textbox, f"Erro ao converter a imagem: {e}", self.status_label)
-            self.log_label.configure(text="Erro ao converter a imagem") 
+            update_log(self.log_textbox, f"Erro ao converter a imagem: {e}", self.log_label)
+            self.log_label.configure(text="Erro ao converter a imagem")

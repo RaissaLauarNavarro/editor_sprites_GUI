@@ -1,6 +1,8 @@
+# image_processor.py
+
 import os
 from PIL import Image, ImageOps
-from typing import Callable
+from typing import Callable, Optional
 
 def process_and_save_blocks(
     image_path: str,
@@ -8,7 +10,7 @@ def process_and_save_blocks(
     output_name: str,
     bloco_px: int,
     scale: int,
-    progress_callback: Callable[[float], None]
+    progress_callback: Optional[Callable[[float], None]]
 ) -> None:
     """
     Processa uma imagem, dividindo-a em blocos e salvando-os.
@@ -18,7 +20,7 @@ def process_and_save_blocks(
         output_folder: Caminho da pasta onde os blocos serão salvos.
         bloco_px: O tamanho de cada bloco em pixels.
         scale: O fator de escala para redimensionar os blocos.
-        progress_callback: Uma função para notificar o progresso (de 0 a 1).
+        progress_callback: Uma função para notificar o progresso (de 0 a 1), ou None.
     """
     imagem = Image.open(image_path).convert("RGBA")
     largura, altura = imagem.size
@@ -39,5 +41,6 @@ def process_and_save_blocks(
                 bloco.save(os.path.join(output_folder, nome_arquivo))
                 counter += 1
         
-        progress = (i + 1) / total_rows
-        progress_callback(progress)
+        if progress_callback:
+            progress = (i + 1) / total_rows
+            progress_callback(progress)
