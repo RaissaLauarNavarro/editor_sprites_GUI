@@ -13,6 +13,7 @@ def update_log(log_textbox: ctk.CTkTextbox, message: str, status_label: Optional
     if status_label:
         status_label.configure(text=message, text_color="white")
 
+
 def open_output_folder(folder_path: str, log_textbox: ctk.CTkTextbox, status_label: Optional[ctk.CTkLabel] = None) -> None:
     """
     Tenta abrir a pasta de saída no explorador de arquivos do sistema.
@@ -30,6 +31,7 @@ def open_output_folder(folder_path: str, log_textbox: ctk.CTkTextbox, status_lab
     except Exception as e:
         update_log(log_textbox, f"Não foi possível abrir a pasta: {e}", status_label)
 
+
 def select_image_path() -> Optional[str]:
     """
     Abre a caixa de diálogo para selecionar um arquivo de imagem.
@@ -39,6 +41,7 @@ def select_image_path() -> Optional[str]:
         title="Selecione um arquivo de imagem",
         filetypes=[("Imagens", "*.png *.jpg *.jpeg *.bmp *.tiff *.gif *.webp"), ("Todos os arquivos", "*.*")]
     )
+
 
 def select_output_folder() -> Optional[str]:
     """

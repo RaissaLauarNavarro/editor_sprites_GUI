@@ -425,9 +425,12 @@ class MainController:
             return
         
         try:
-            convert_image_type(self.image_path, self.end_folder, output_name, file_type)
-            update_log(self.log_textbox, f"Imagem convertida para {file_type.upper()} com sucesso!", self.log_label)
-            self.log_label.configure(text="Imagem convertida com sucesso!") 
+            result_path = convert_image_type(self.image_path, self.end_folder, output_name, file_type)
+            self.log_label.configure(text=result_path)
+            # update_log(self.log_textbox, f"Imagem convertida para {file_type.upper()} com sucesso!", self.log_label)
+            # self.log_label.configure(text="Imagem convertida com sucesso!")
+            # if result_path:
+            #     update_log(self.log_textbox, f"Arquivo salvo em: {result_path}", self.log_label)
         except Exception as e:
             update_log(self.log_textbox, f"Erro ao converter a imagem: {e}", self.log_label)
             self.log_label.configure(text="Erro ao converter a imagem")
