@@ -19,7 +19,7 @@ Editor de Sprites oferece as seguintes ferramentas em um único lugar:
 
 # 📥 Como baixar e utilizar
 
-Para a maneira mais fácil de usar o aplicativo, basta baixar o arquivo executável (.exe) da página de releases.
+Para a maneira mais fácil de usar o aplicativo, basta baixar o arquivo executável (.exe) da página de **releases**.
 
 Não é necessário instalar Python ou qualquer outra biblioteca. Apenas baixe e execute o arquivo Editor_de_Sprites.exe.
 
